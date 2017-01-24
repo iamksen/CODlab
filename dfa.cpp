@@ -69,7 +69,8 @@ bool is_keyword( string word, struct keyword_tree *root )
 	struct keyword_tree *temp;
 	temp = root;
 	for(int i = 0 ; i < word.length(); i++){
-		if( temp->next[ word[i] -97 ] == NULL )	//if state is not present
+		if( word[i] - 97 < 0 || word[i]-97 >= 26 ) return false; //if character is not lowercase letter
+		if( temp->next[ word[i] -97 ] == NULL )	//if state is not present; Consider only lowercase letters
 			return false;
 		temp = temp->next[ word[i]-97 ];
 	}
