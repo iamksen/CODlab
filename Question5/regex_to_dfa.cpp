@@ -54,9 +54,9 @@ string infix_to_postfix(string regex)
 void assign( string exp )
 {
 	int count = 1;
-	struct node sn;
 	for(int i = 0 ; i < (int)exp.length(); i++){
 		if( (exp[i] >= 'a' && exp[i] <= 'z') || exp[i] == '#'){ //if alphabet
+			struct node sn;
 			sn.firstpos.insert(count); //count is assign according to prefix regex
 			sn.lastpos.insert(count);
 			sn.nullable = false; // leaf node are not nullable
@@ -64,9 +64,6 @@ void assign( string exp )
 			if( exp[i] != '#') //skip #
 				alphabets.insert( exp[i] );
 			position[ exp[i] ].push_back(count);
-			// clear the structure for next use
-			sn.firstpos.clear();
-			sn.lastpos.clear();
 			count++;
 		}
 	}
@@ -99,7 +96,6 @@ struct node apply_rule(struct node left, struct node right, char c)
 		}
 		else
 			sn.lastpos = right.lastpos;
-
 	} else if ( c == '*'){
 		sn.nullable = true;
 		sn.firstpos = right.firstpos;
@@ -114,17 +110,17 @@ struct node first_last_pos( string exp )
 	stack < struct node > st;
 	struct node left, right, temp;
 	for(int i = 0; i < (int)exp.length(); i++){
-		if( (exp[i] >= 'a' && exp[i] <= 'z') || exp[i] == '#') 
+		if( (exp[i] >= 'a' && exp[i] <= 'z') || exp[i] == '#') // we will apply rules at *, . and | nodes 
 			st.push( mp[make_pair(exp[i], i+1)] );
 		else {
-			if( !st.empty() ){
+			if( !st.empty() ){ // check for right child
 				right = st.top();
 				st.pop();
 			}
 			left.firstpos.clear();
 			left.lastpos.clear();
-			if(exp[i] != '*'){
-				if( !st.empty() ){
+			if(exp[i] != '*'){ // if node is * node we just need one child
+				if( !st.empty() ){ // check for left child
 					left = st.top();
 					st.pop();
 				}
@@ -149,9 +145,10 @@ vector< set<int> > calculate_followpos( string exp )
 		if( (exp[i] >= 'a' && exp[i] <= 'z') || exp[i] == '#')
 			st.push( mp[make_pair(exp[i], i+1)]);
 		else if( exp[i] == '|'){
+			if( !st.empty()) st.pop(); //remove right child
+			if( !st.empty()) st.pop(); //remove left child
 			st.push( mp[make_pair(exp[i], i+1)]);
 		} else {
-
 			if( !st.empty()){
 				right = st.top();
 				st.pop();
@@ -226,7 +223,7 @@ void print_dfa( set<int> firstpos, vector< set<int> > followpos)
 		temp = state.top();
 		state.pop();
 		count++;
-		if(count > 1000) break;
+		//if(count > 1000) break;
 		if( !visited[temp] ){
 			visited[temp] = true;
 			for( alpha = alphabets.begin(); alpha != alphabets.end(); alpha++){
@@ -239,14 +236,14 @@ void print_dfa( set<int> firstpos, vector< set<int> > followpos)
 					}
 				}
 				Dtrans[make_pair(temp, *alpha)] = next_state;
-				if( !visited[next_state] ) //if next_state is not visited till now
+				if( next_state.size() >0 && !visited[next_state] ) //if next_state is not visited till now
 					state.push(next_state);
 			}
 		}
 	}
 	bool finalState;
 	cout<<"\n\n# denotes start state, * denote final states";
-	cout<<"\nCurrent State   Input Symbol   Next State\n";
+	cout<<"\n( Current State, Input Symbol ) --> Next State\n";
 	for( mit = Dtrans.begin(); mit != Dtrans.end(); mit++){
 		finalState = false;
 		cout<<"(";
@@ -258,6 +255,7 @@ void print_dfa( set<int> firstpos, vector< set<int> > followpos)
 		if( mit->first.first == firstpos) cout<<"#";
 		if( finalState) cout<<"*";
 		cout<<" --> ( ";
+		if( mit->second.size() == 0 ) cout<<"trap ";
 		for(sit = mit->second.begin(); sit != mit->second.end(); sit++)
 			cout<<*sit<<" ";
 		cout<<")"<<endl;
@@ -279,6 +277,7 @@ int main()
 	assign( result );
 	struct node f = first_last_pos( result );
 	print_firstpos();
+
 	vector< set<int> > followpos( result.length() + 1);
 	followpos = calculate_followpos( result );
 	print_followpos(followpos);
