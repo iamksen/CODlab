@@ -120,7 +120,7 @@ void remove_left_recursion(mp &prod)
 
 int main(int argc, char const *argv[])
 {
-	read_input("input.txt"); //argv[1] is the name of the input file which contains grammar
+	read_input("input.txt"); // input.txt is the name of the input file which contains grammar
 	cout<<"Productions before removing left recursion\n";
 	print_all_production(production);
 	remove_left_recursion(production);
